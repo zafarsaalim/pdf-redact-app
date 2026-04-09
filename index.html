@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Redact Demo</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  h1 {
+    text-align: center;
+  }
+  .container {
+    max-width: 500px;
+    margin: auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  input[type=file] {
+    display: block;
+    margin: 1rem 0;
+  }
+  button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+  #status {
+    margin-top: 1rem;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>PDF Redact Demo</h1>
+  <input type="file" id="pdfInput" accept="application/pdf">
+  <button id="uploadBtn">Upload & Redact</button>
+  <div id="status"></div>
+</div>
+
+<script>
+  const apiUrl = "https://pdfredactapi.up.railway.app/redact"; // replace with your Railway API endpoint
+
+  document.getElementById("uploadBtn").addEventListener("click", async () => {
+    const fileInput = document.getElementById("pdfInput");
+    if (!fileInput.files.length) {
+      alert("Please select a PDF file first.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const statusDiv = document.getElementById("status");
+    statusDiv.textContent = "Uploading and processing...";
+
+    try {
+      const response = await fetch(apiUrl + "/redact", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error("API request failed: " + response.statusText);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      // Create a download link
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "redacted.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      statusDiv.textContent = "Redacted PDF ready! Download should start automatically.";
+    } catch (err) {
+      console.error(err);
+      statusDiv.textContent = "Error: " + err.message;
+    }
+  });
+</script>
+
+</body>
+</html>
