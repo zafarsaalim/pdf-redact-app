@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PDF Redact Tool</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  }
+  html, body {
+  overflow-x: hidden;
+}
+  body {
+    margin: 0;
+    background: #0b1220;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 18px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .title {
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #a8b3cf;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .panel {
+    background: #121a2b;
+    border: 1px solid #24304a;
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .steps {
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .highlight {
+    color: #60a5fa;
+  }
+
+  input[type=file] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #2b3b5c;
+    background: #0f172a;
+    color: white;
+    font-size: 13px;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #2563eb;
+  }
+
+  button:disabled {
+    background: #334155;
+    cursor: not-allowed;
+  }
+
+  .file {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .status {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #cbd5e1;
+    min-height: 18px;
+  }
+
+  .badge {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .glow {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: #3b82f6;
+    filter: blur(120px);
+    opacity: 0.15;
+    top: 20%;
+  }
+  .glow { pointer-events: none; }
+</style>
+</head>
+
+<body>
+
+<div class="glow"></div>
+
+<div class="app">
+
+  <div class="title">PDF Redact Tool</div>
+  <div class="subtitle">Highlight → Upload → Get redacted PDF instantly</div>
+
+  <div class="panel">
+
+    <div class="steps">
+      1. Open your PDF and <span class="highlight">highlight sensitive text</span><br>
+      2. Upload the file here<br>
+      3. Download securely redacted PDF
+    </div>
+
+    <input type="file" id="fileInput" accept="application/pdf"/>
+
+    <div class="file" id="fileName"></div>
+
+    <button id="btn" disabled>Redact PDF</button>
+
+    <div class="status" id="status"></div>
+
+    <div class="badge">No login • No storage • Instant processing</div>
+
+  </div>
+</div>
+
+<script>
+const apiUrl = "https://pdf-redact-api.onrender.com";
+
+const fileInput = document.getElementById("fileInput");
+const btn = document.getElementById("btn");
+const status = document.getElementById("status");
+const fileName = document.getElementById("fileName");
+
+let file = null;
+
+fileInput.addEventListener("change", (e) => {
+  file = e.target.files[0];
+  fileName.textContent = file ? file.name : "";
+  btn.disabled = !file;
+});
+
+btn.addEventListener("click", async () => {
+  if (!file) return;
+
+  btn.disabled = true;
+  status.textContent = "Processing...";
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch(`${apiUrl}/redact`, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!res.ok) throw new Error("Server error");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "redacted.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    status.textContent = "Done. Download started.";
+  } catch (err) {
+    status.textContent = "Error: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
